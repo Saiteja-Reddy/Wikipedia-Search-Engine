@@ -1,6 +1,31 @@
 import xml.sax
 import re
 
+def strip_non_ascii(string):
+    ''' Returns the string without non ASCII characters'''
+    stripped = (c for c in string if 0 < ord(c) < 127)
+    return ''.join(stripped)
+
+def process_body(t):
+   fin = t.lower()
+   fin = re.sub("<ref.*?>.*?</ref>", "", fin)
+   fin = re.sub("<ref.*?\/>", "", fin)
+   fin = re.sub("<ref.*?>", "", fin)
+   fin = re.sub("</ref>", "", fin)
+   fin = re.sub("<blockquote.*?>", "", fin)
+   fin = re.sub("</blockquote>", "", fin)
+   fin = fin.rstrip()
+   fin = strip_non_ascii(fin)
+   fin = re.sub("{{verify.*?}}", "", fin)
+   fin = re.sub("{{citation.*?}}", "", fin)
+   fin = re.sub("{{failed.*?}}", "", fin)
+   fin = re.sub("{{page.*?}}", "", fin)
+   fin = re.sub("{{lang.*?fa.*?}}", "", fin)
+   fin = re.sub("{{spaced ndash}}", "", fin)
+   fin = re.sub("{{quote.*?\|(.*?)}}", r"\1", fin)
+   fin = re.sub("{{main.*?\|(.*?)}}", r"\1", fin)   
+   return fin   
+
 class PageHandler( xml.sax.ContentHandler ):
    def __init__(self):
       self.title = ""
@@ -69,13 +94,13 @@ class PageHandler( xml.sax.ContentHandler ):
       		# print(len(self.text))
       		# print(self.text[:100])
 
-      	print(infoboxes)
+      	# print(infoboxes) # *******
       	# print(positions)
 
       	category = self.cat_match.findall(self.text)
       	# print("Replacing ::::::")
       	self.text = re.sub('\[\[Category:([^\]}]+)\]\]', '', self.text)
-      	print(category)
+      	# print(category) # *********
 
       	# if(len(category) >= 1):
       	# 	print(category[0].split('|'))
@@ -111,38 +136,42 @@ class PageHandler( xml.sax.ContentHandler ):
 
       	# print(cites)    
 
-      	notes_and_refs = re.search("==Notes and references==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	notes_and_refs = re.search("==Notes and references==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)  	
       	if notes_and_refs:
       		start, end = notes_and_refs.span()
       		self.text = self.text[:start] + self.text[end:]
       		notes_and_refs = notes_and_refs.group()[24:]
-      		# print(notes_and_refs)    
+      		# print("Notes and Refs ", notes_and_refs)    
 
-      	ext_links = re.search("==External links==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	ext_links = re.search("==External links==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)  	
       	if ext_links:
       		start, end = ext_links.span()
       		self.text = self.text[:start] + self.text[end:]      		
       		ext_links = ext_links.group()[18:]
-      		# print(ext_links)  
+      		# print("External Links ", ext_links)  
 
-      	further_read = re.search("==Further reading==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	further_read = re.search("==Further reading==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)  	
       	if further_read:
       		start, end = further_read.span()
       		self.text = self.text[:start] + self.text[end:]      		
       		further_read = further_read.group()[19:]
-      		# print(further_read)  
+      		# print("Further Readings ", further_read)  
 
 
-      	see_also = re.search("==See also==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	see_also = re.search("==See also==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)  	
       	if see_also:
       		start, end = see_also.span()
       		self.text = self.text[:start] + self.text[end:]      		
       		see_also = see_also.group()[12:]
-      		# print(see_also)        		
+      		# print("See Also", see_also)   
 
+      	# f = open('text.txt', 'w')
+      	# f.write(self.text)
+      	self.text = process_body(self.text)		      		
 
       self.CurrentData = ""
       # if(self.net <= 10):
+
       if tag == "page":
       	print("Now:", self.net)
 
