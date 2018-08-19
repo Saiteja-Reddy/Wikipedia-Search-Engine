@@ -110,12 +110,35 @@ class PageHandler( xml.sax.ContentHandler ):
       		# print(self.text[:100])
 
       	# print(cites)    
-      	notes_and_refs = re.findall("==Notes and references==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
-      	print(notes_and_refs)
-      	ext_links = re.findall("==External links==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
-      	print(ext_links)   
-      	#similarly ==Further reading==, ==See also==,  
 
+      	notes_and_refs = re.search("==Notes and references==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	if notes_and_refs:
+      		start, end = notes_and_refs.span()
+      		self.text = self.text[:start] + self.text[end:]
+      		notes_and_refs = notes_and_refs.group()[24:]
+      		# print(notes_and_refs)    
+
+      	ext_links = re.search("==External links==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	if ext_links:
+      		start, end = ext_links.span()
+      		self.text = self.text[:start] + self.text[end:]      		
+      		ext_links = ext_links.group()[18:]
+      		# print(ext_links)  
+
+      	further_read = re.search("==Further reading==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	if further_read:
+      		start, end = further_read.span()
+      		self.text = self.text[:start] + self.text[end:]      		
+      		further_read = further_read.group()[19:]
+      		# print(further_read)  
+
+
+      	see_also = re.search("==See also==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	if see_also:
+      		start, end = see_also.span()
+      		self.text = self.text[:start] + self.text[end:]      		
+      		see_also = see_also.group()[12:]
+      		# print(see_also)        		
 
 
       self.CurrentData = ""
