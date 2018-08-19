@@ -20,9 +20,7 @@ class PageHandler( xml.sax.ContentHandler ):
          self.id = ""
          self.count = 0
          self.text = ""
-         # self.net += 1
-         if self.net >= 11:
-            raise xml.sax.SAXException('Stop Parsing')
+         self.net += 1
 
          # title = attributes["title"]
          # print "Title:", title
@@ -41,6 +39,7 @@ class PageHandler( xml.sax.ContentHandler ):
          	raise xml.sax.SAXException('Stop Parsing')
 
       if tag == "text":
+      	self.text = re.sub('https?:\/\/[^\s\|]+', '', self.text)
       	infoboxes = []
       	positions = []
       	for match in re.finditer("{{Infobox", self.text):
@@ -98,7 +97,7 @@ class PageHandler( xml.sax.ContentHandler ):
       				flag = flag - 1
       			else:
       				cite = cite + character
-      		# print(infobox)
+      		# print(cite)
       		# print("pos :", start, " - ",  end)
       		positions.append((start, end))
       		cites.append(cite)
@@ -110,13 +109,19 @@ class PageHandler( xml.sax.ContentHandler ):
       		# print(len(self.text))
       		# print(self.text[:100])
 
-      	print(cites)      	
+      	# print(cites)    
+      	notes_and_refs = re.findall("==Notes and references==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	print(notes_and_refs)
+      	ext_links = re.findall("==External links==[^=]*?[*][^=]*?\n\n", self.text, re.DOTALL)  	
+      	print(ext_links)   
+      	#similarly ==Further reading==, ==See also==,  
+
 
 
       self.CurrentData = ""
-      if(self.net <= 10):
-         if tag == "page":
-            print("Now:", self.net)
+      # if(self.net <= 10):
+      if tag == "page":
+      	print("Now:", self.net)
 
    # Call when a character is read
    def characters(self, content):
