@@ -8,17 +8,25 @@ def strip_non_ascii(string):
 
 def process_body(t):
     fin = t.lower()
-    fin = re.sub("<blockquote.*?>(.*?)</blockquote>", r"\1", fin)
+    fin = re.sub("<blockquote.*?>(.*?)</blockquote>", r"\1 ", fin)
     fin = fin.rstrip()
-    fin = strip_non_ascii(fin)
-    fin = re.sub("{{verify.*?}}", "", fin)
-    fin = re.sub("{{citation.*?}}", "", fin)
-    fin = re.sub("{{failed.*?}}", "", fin)
-    fin = re.sub("{{page.*?}}", "", fin)
-    fin = re.sub("{{lang.*?fa.*?}}", "", fin)
-    fin = re.sub("{{spaced ndash}}", "", fin)
-    fin = re.sub("{{quote.*?\|(.*?)}}", r"\1", fin)
-    fin = re.sub("{{main.*?\|(.*?)}}", r"\1", fin)
+    # fin = strip_non_ascii(fin)
+    fin = re.sub("{{verify.*?}}", " ", fin)
+    fin = re.sub("{{citation.*?}}", " ", fin)
+    fin = re.sub("{{failed.*?}}", " ", fin)
+    fin = re.sub("{{page.*?}}", " ", fin)
+    fin = re.sub("{{lang.*?fa.*?}}", " ", fin)
+    fin = re.sub("{{spaced ndash}}", " ", fin)
+    fin = re.sub("{{quote.*?\|(.*?)}}", r"\1 ", fin)
+    fin = re.sub("{{main.*?\|(.*?)}}", r"\1 ", fin)
+    fin = re.sub("file:.*?\|", " ", fin)
+    fin = re.sub("<!--.*?-->", " ", fin)
+    # translation = {}
+    # translation[ord('|')] = ' '
+    # for ele in '"();[],.':
+    #     translation[ord(ele)] = ''
+    # fin = fin.translate(translation)
+
     return fin
 
 class PageHandler( xml.sax.ContentHandler ):
@@ -76,9 +84,9 @@ class PageHandler( xml.sax.ContentHandler ):
             for i in reversed(positions):
                 self.text = self.text[:i[0]] + self.text[i[1]:]
 
-            self.text = re.sub('<ref.*?\/>', '', self.text)
-            self.text = re.sub('<ref.*?>.*?</ref>', '', self.text)
-            self.text = re.sub('https?:\/\/[^\s\|]+', '', self.text)
+            self.text = re.sub('<ref.*?\/>', ' ', self.text)
+            self.text = re.sub('<ref.*?>.*?</ref>', ' ', self.text)
+            self.text = re.sub('https?:\/\/[^\s\|]+', ' ', self.text)
             infoboxes = []
             positions = []
             for match in re.finditer("{{Infobox", self.text):
@@ -103,7 +111,7 @@ class PageHandler( xml.sax.ContentHandler ):
                 self.text = self.text[:i[0]] + self.text[i[1]:]
 
             category = self.cat_match.findall(self.text)
-            self.text = re.sub('\[\[Category:([^\]}]+)\]\]', '', self.text)
+            self.text = re.sub('\[\[Category:([^\]}]+)\]\]', ' ', self.text)
 
             notes_and_refs = re.search("==Notes and references==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)
             if notes_and_refs:
