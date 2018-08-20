@@ -26,13 +26,14 @@ def process_body(t):
 
     return fin
 
-Class Page():
+class Page():
     
     def __init__(self, title, text, page_id  ):
         self.title = title
         self.id = page_id
         self.text = text
         self.cat_match = re.compile('\[\[category:([^\]}]+)\]\]')
+        # add new elementss here
 
     def process(self):
         f = open('text_orig.txt', 'w')
@@ -197,7 +198,12 @@ for event, elem in context:
         elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}id":
             page_id = child.text
         elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}revision":
-            page_text = child[4].text
+            for sub in child:
+                if sub.tag == "{http://www.mediawiki.org/xml/export-0.8/}text":
+                    page_text = sub.text
     page = Page(page_title, page_text, page_id)
-    page.process()
+    if(page_text != None):
+        page.process()
+    # else:
+        # print("None Text\n")
     elem.clear()
