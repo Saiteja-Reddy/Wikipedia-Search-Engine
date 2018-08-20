@@ -129,6 +129,33 @@ class PageHandler( xml.sax.ContentHandler ):
                 self.text = self.text[:start] + self.text[end:]
                 see_also = see_also.group()[12:]
 
+            f = open('text_other.txt', 'w')
+            f.write("cites\n")
+            f.write("\n".join(cites))
+            f.write("\n\ninfoboxes\n")
+            f.write("\n".join(infoboxes))
+            f.write("\n\ncategory\n")
+            f.write("\n".join(category))
+            f.write("\n\nnotes_and_refs\n")
+            if(notes_and_refs):
+                f.write(notes_and_refs)
+            f.write("\n\next_links\n")
+            if(ext_links):
+                f.write(ext_links)
+            f.write("\n\nfurther_read\n") 
+            if(further_read): 
+                f.write(further_read)
+            f.write("\n\nsee_also\n")  
+            if(see_also):
+                f.write(see_also)
+            f.write("\n\n")   
+            f.close()                                                                     
+
+
+            f = open('text_bp.txt', 'w')
+            f.write(self.text)
+            f.close()
+
             self.text = process_body(self.text)
             f = open('text.txt', 'w')
             f.write(self.text)
