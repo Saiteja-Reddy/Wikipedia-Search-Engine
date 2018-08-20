@@ -1,5 +1,6 @@
 import xml.sax
 import re
+import string
 
 def strip_non_ascii(string):
     ''' Returns the string without non ASCII characters'''
@@ -7,24 +8,25 @@ def strip_non_ascii(string):
     return ''.join(stripped)
 
 def process_body(t):
-    fin = t.lower()
+    fin = t
     fin = re.sub("<blockquote.*?>(.*?)</blockquote>", r"\1 ", fin)
     fin = fin.rstrip()
     # fin = strip_non_ascii(fin)
-    fin = re.sub("{{verify.*?}}", " ", fin)
-    fin = re.sub("{{citation.*?}}", " ", fin)
-    fin = re.sub("{{failed.*?}}", " ", fin)
-    fin = re.sub("{{page.*?}}", " ", fin)
-    fin = re.sub("{{lang.*?fa.*?}}", " ", fin)
-    fin = re.sub("{{spaced ndash}}", " ", fin)
-    fin = re.sub("{{quote.*?\|(.*?)}}", r"\1 ", fin)
-    fin = re.sub("{{main.*?\|(.*?)}}", r"\1 ", fin)
-    fin = re.sub("file:.*?\|", " ", fin)
-    fin = re.sub("<!--.*?-->", " ", fin)
+    fin = re.sub("{{verify.*?}}", " ", fin, re.DOTALL)
+    fin = re.sub("{{citation.*?}}", " ", fin, )
+    fin = re.sub("{{failed.*?}}", " ", fin, re.DOTALL)
+    fin = re.sub("{{page.*?}}", " ", fin, re.DOTALL)
+    fin = re.sub("{{lang.*?fa.*?}}", " ", fin, re.DOTALL)
+    fin = re.sub("{{spaced ndash}}", " ", fin, re.DOTALL)
+    fin = re.sub("{{quote.*?\|(.*?)}}", r"\1 ", fin, re.DOTALL)
+    fin = re.sub("{{main.*?\|(.*?)}}", r"\1 ", fin, re.DOTALL)
+    fin = re.sub("file:.*?\|", " ", fin, re.DOTALL)
+    # fin = re.sub("<\!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
+    fin = re.sub("<!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
+
     # translation = {}
-    # translation[ord('|')] = ' '
-    # for ele in '"();[],.':
-    #     translation[ord(ele)] = ''
+    # for ele in string.punctuation:
+    #     translation[ord(ele)] = ' '
     # fin = fin.translate(translation)
 
     return fin
@@ -36,7 +38,7 @@ class PageHandler( xml.sax.ContentHandler ):
         self.count = 0
         self.net = 0
         self.text = ""
-        self.cat_match = re.compile('\[\[Category:([^\]}]+)\]\]')
+        self.cat_match = re.compile('\[\[category:([^\]}]+)\]\]')
 
     def startElement(self, tag, attributes):
         self.CurrentData = tag
@@ -56,15 +58,22 @@ class PageHandler( xml.sax.ContentHandler ):
             if (self.count == 0):
                 print("ID :", self.id)
                 self.count = self.count + 1
-                if int(self.id) == 2178:
+                if int(self.id) == 2178: # 2178 - for ahmad shah massoud, 1166 - for AI
                     print("yes", type(self.id))
                     raise xml.sax.SAXException('Stop Parsing')
 
         if tag == "text":
 
+            f = open('text_orig.txt', 'w')
+            f.write(self.text)
+            f.close()   
+            
+            self.text = self.text.lower()
+
+
             cites = []
             positions = []
-            for match in re.finditer("{{[Cc]ite", self.text):
+            for match in re.finditer("{{cite", self.text):
                 start = match.span()[0]
                 end = start + 6
                 flag = 1
@@ -84,12 +93,34 @@ class PageHandler( xml.sax.ContentHandler ):
             for i in reversed(positions):
                 self.text = self.text[:i[0]] + self.text[i[1]:]
 
-            self.text = re.sub('<ref.*?\/>', ' ', self.text)
-            self.text = re.sub('<ref.*?>.*?</ref>', ' ', self.text)
+            # self.text = re.sub('<ref.*?\/>', ' ', self.text)
+            references = []
+            positions = []
+            for match in re.finditer('<ref(.*?)\/>', self.text):
+                start = match.span()[0]
+                end = match.span()[1]
+                positions.append((start, end))
+                references.append(match.group())
+            for i in reversed(positions):
+                self.text = self.text[:i[0]] + self.text[i[1]:]
+
+            # self.text = re.sub('<ref.*?>(.|\\n)*?</ref>', ' ', self.text)
+            positions = []
+            for match in re.finditer('<ref.*?>(.|\\n)*?</ref>', self.text):
+                start = match.span()[0]
+                end = match.span()[1]
+                positions.append((start, end))
+                references.append(match.group())
+            for i in reversed(positions):
+                self.text = self.text[:i[0]] + self.text[i[1]:]            
+
+            # print(references)
+
             self.text = re.sub('https?:\/\/[^\s\|]+', ' ', self.text)
+
             infoboxes = []
             positions = []
-            for match in re.finditer("{{Infobox", self.text):
+            for match in re.finditer("{{infobox", self.text):
                 start = match.span()[0]
                 end = start + 9
                 flag = 1
@@ -111,27 +142,28 @@ class PageHandler( xml.sax.ContentHandler ):
                 self.text = self.text[:i[0]] + self.text[i[1]:]
 
             category = self.cat_match.findall(self.text)
-            self.text = re.sub('\[\[Category:([^\]}]+)\]\]', ' ', self.text)
+            self.text = re.sub('\[\[category:([^\]}]+)\]\]', ' ', self.text)
+            # print(category)
 
-            notes_and_refs = re.search("==Notes and references==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)
+            notes_and_refs = re.search("==[\s]*?notes and references[\s]*?==.*?(?![=]{2,}).*?\n\n", self.text, re.DOTALL)
             if notes_and_refs:
                 start, end = notes_and_refs.span()
                 self.text = self.text[:start] + self.text[end:]
                 notes_and_refs = notes_and_refs.group()[24:]
 
-            ext_links = re.search("==External links==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)
+            ext_links = re.search("==[\s]*?external links[\s]*?==.*?(?![=]{2,}).*?\n\n", self.text, re.DOTALL)
             if ext_links:
                 start, end = ext_links.span()
                 self.text = self.text[:start] + self.text[end:]
                 ext_links = ext_links.group()[18:]
 
-            further_read = re.search("==Further reading==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)
+            further_read = re.search("==[\s]*?further reading[\s]*?==.*?(?![=]{2,}).*?\n\n", self.text, re.DOTALL)
             if further_read:
                 start, end = further_read.span()
                 self.text = self.text[:start] + self.text[end:]
                 further_read = further_read.group()[19:]
 
-            see_also = re.search("==See also==[^=]*?[*?][^=]*?\n\n", self.text, re.DOTALL)
+            see_also = re.search("==[\s]*?see also[\s]*?==.*?(?![=]{2,}).*?\n\n", self.text, re.DOTALL)
             if see_also:
                 start, end = see_also.span()
                 self.text = self.text[:start] + self.text[end:]
@@ -156,7 +188,9 @@ class PageHandler( xml.sax.ContentHandler ):
             f.write("\n\nsee_also\n")  
             if(see_also):
                 f.write(see_also)
-            f.write("\n\n")   
+            f.write("\n\nreferences\n")  
+            f.write("\n".join(references))
+            f.write("\n\n")               
             f.close()                                                                     
 
 
