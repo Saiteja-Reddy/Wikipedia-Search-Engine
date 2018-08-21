@@ -2,6 +2,18 @@ from lxml import etree
 import re
 import string
 
+
+import nltk
+from nltk.corpus import stopwords
+s_words = stopwords.words("english")
+
+from nltk.stem.porter import *
+stemmer = PorterStemmer()
+
+from collections import Counter
+inverted_index = {}
+
+
 def process_body(t):
     fin = t
     fin = re.sub("<blockquote.*?>(.*?)</blockquote>", r"\1 ", fin)
@@ -172,8 +184,18 @@ class Page():
         self.text = process_body(self.text)
         f = open('text.txt', 'w')
         f.write(self.text)
-        f.close()        
+        f.close() 
 
+        tokens = nltk.word_tokenize(self.text)
+        tokens = [token for token in tokens if token not in s_words]
+        stemmed = [stemmer.stem(token) for token in tokens]
+        counts = Counter(stemmed)
+        print("Tokens =  " + str(len(counts)))
+        for k in counts.keys():
+            if(k in inverted_index):
+                inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
+            else:
+                inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
 
 
 infile = "wiki-search-small.xml"
@@ -185,8 +207,8 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
 for event, elem in context:
     count += 1
     # print(count)
-    if count >= 447: #1175 for ahmad
-        break
+    # if count >= 447: #1175 for ahmad
+        # break
     # print(elem[0].text)
     page_title = ""
     page_id = ""
@@ -207,3 +229,8 @@ for event, elem in context:
     # else:
         # print("None Text\n")
     elem.clear()
+
+import json
+with open("json_inverted", 'w') as f:
+    json.dump(inverted_index, f)
+
