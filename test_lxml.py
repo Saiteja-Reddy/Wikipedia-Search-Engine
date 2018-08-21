@@ -19,10 +19,10 @@ def process_body(t):
     # fin = re.sub("<\!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
     fin = re.sub("<!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
 
-    # translation = {}
-    # for ele in string.punctuation:
-    #     translation[ord(ele)] = ' '
-    # fin = fin.translate(translation)
+    translation = {}
+    for ele in string.punctuation:
+        translation[ord(ele)] = ' '
+    fin = fin.translate(translation)
 
     return fin
 
@@ -184,8 +184,8 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
  
 for event, elem in context:
     count += 1
-    print(count)
-    if count >= 1175:
+    # print(count)
+    if count >= 447: #1175 for ahmad
         break
     # print(elem[0].text)
     page_title = ""
@@ -194,7 +194,7 @@ for event, elem in context:
     for child in elem:
         if child.tag == "{http://www.mediawiki.org/xml/export-0.8/}title":
             page_title = child.text
-            print(page_title + "\n")
+            print(str(count) + " " + page_title + "\n")
         elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}id":
             page_id = child.text
         elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}revision":
