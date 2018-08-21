@@ -48,9 +48,9 @@ class Page():
         # add new elementss here
 
     def process(self):
-        f = open('text_orig.txt', 'w')
-        f.write(self.text)
-        f.close()   
+        # f = open('text_orig.txt', 'w')
+        # f.write(self.text)
+        # f.close()   
 
         self.text = self.text.lower()
 
@@ -152,50 +152,54 @@ class Page():
             self.text = self.text[:start] + self.text[end:]
             see_also = see_also.group()[12:]
 
-        f = open('text_other.txt', 'w')
-        f.write("cites\n")
-        f.write("\n".join(cites))
-        f.write("\n\ninfoboxes\n")
-        f.write("\n".join(infoboxes))
-        f.write("\n\ncategory\n")
-        f.write("\n".join(category))
-        f.write("\n\nnotes_and_refs\n")
-        if(notes_and_refs):
-            f.write(notes_and_refs)
-        f.write("\n\next_links\n")
-        if(ext_links):
-            f.write(ext_links)
-        f.write("\n\nfurther_read\n") 
-        if(further_read): 
-            f.write(further_read)
-        f.write("\n\nsee_also\n")  
-        if(see_also):
-            f.write(see_also)
-        f.write("\n\nreferences\n")  
-        f.write("\n".join(references))
-        f.write("\n\n")               
-        f.close()                                                                     
+        # f = open('text_other.txt', 'w')
+        # f.write("cites\n")
+        # f.write("\n".join(cites))
+        # f.write("\n\ninfoboxes\n")
+        # f.write("\n".join(infoboxes))
+        # f.write("\n\ncategory\n")
+        # f.write("\n".join(category))
+        # f.write("\n\nnotes_and_refs\n")
+        # if(notes_and_refs):
+        #     f.write(notes_and_refs)
+        # f.write("\n\next_links\n")
+        # if(ext_links):
+        #     f.write(ext_links)
+        # f.write("\n\nfurther_read\n") 
+        # if(further_read): 
+        #     f.write(further_read)
+        # f.write("\n\nsee_also\n")  
+        # if(see_also):
+        #     f.write(see_also)
+        # f.write("\n\nreferences\n")  
+        # f.write("\n".join(references))
+        # f.write("\n\n")               
+        # f.close()                                                                     
 
 
-        f = open('text_bp.txt', 'w')
-        f.write(self.text)
-        f.close()
+        # f = open('text_bp.txt', 'w')
+        # f.write(self.text)
+        # f.close()
 
         self.text = process_body(self.text)
-        f = open('text.txt', 'w')
-        f.write(self.text)
-        f.close() 
+        # print("Heere")
+        # f = open('text.txt', 'w')
+        # f.write(self.text)
+        # f.close() 
+        
+        self.text = re.sub("\n", "", self.text)
+        tokens = self.text.split()
 
-        tokens = nltk.word_tokenize(self.text)
+        # tokens = nltk.word_tokenize(self.text)
         tokens = [token for token in tokens if token not in s_words]
         stemmed = [stemmer.stem(token) for token in tokens]
         counts = Counter(stemmed)
-        print("Tokens =  " + str(len(counts)))
-        for k in counts.keys():
-            if(k in inverted_index):
-                inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
-            else:
-                inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
+        # print("Tokens =  " + str(len(counts)))
+        # for k in counts.keys():
+        #     if(k in inverted_index):
+        #         inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
+        #     else:
+        #         inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
 
 
 infile = "wiki-search-small.xml"
@@ -207,7 +211,7 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
 for event, elem in context:
     count += 1
     # print(count)
-    # if count >= 447: #1175 for ahmad
+    # if count >= 100: #1175 for ahmad
         # break
     # print(elem[0].text)
     page_title = ""

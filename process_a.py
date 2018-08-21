@@ -5,6 +5,8 @@ f.close()
 import nltk
 tokens = nltk.word_tokenize(t)
 
+import re
+t = re.sub("\n", "", t)
 # tokens = set(tokens)
 from nltk.corpus import stopwords
 
