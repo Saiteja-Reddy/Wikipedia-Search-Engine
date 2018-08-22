@@ -2,13 +2,12 @@ from lxml import etree
 import re
 import string
 
+# from nltk.corpus import stopwords
+s_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
 
-import nltk
-from nltk.corpus import stopwords
-s_words = stopwords.words("english")
 
-from nltk.stem.porter import *
-stemmer = PorterStemmer()
+import Stemmer
+stemmer = Stemmer.Stemmer('english')
 
 from collections import Counter
 inverted_index = {}
@@ -48,56 +47,23 @@ class Page():
         # add new elementss here
 
     def process(self):
-        # f = open('text_orig.txt', 'w')
-        # f.write(self.text)
-        # f.close()   
+        f = open('text_orig.txt', 'w')
+        f.write(self.text)
+        f.close()   
 
         self.text = self.text.lower()
 
-        cites = []
-        positions = []
-        for match in re.finditer("{{cite", self.text):
-            start = match.span()[0]
-            end = start + 6
-            flag = 1
-            cite = ""
-            for character in self.text[start + 6:]:
-                end = end + 1
-                if flag == 0:
-                    break
-                if character == "{":
-                    flag = flag + 1
-                elif character == "}":
-                    flag = flag - 1
-                else:
-                    cite = cite + character
-            positions.append((start, end))
-            cites.append(cite)
-        for i in reversed(positions):
-            self.text = self.text[:i[0]] + self.text[i[1]:] 
-            
-        # self.text = re.sub('<ref.*?\/>', ' ', self.text)
-        references = []
-        positions = []
-        for match in re.finditer('<ref(.*?)\/>', self.text):
-            start = match.span()[0]
-            end = match.span()[1]
-            positions.append((start, end))
-            references.append(match.group())
-        for i in reversed(positions):
-            self.text = self.text[:i[0]] + self.text[i[1]:]
+        cit = re.compile("{{cite?(?:ation)?.*?}}")
+        cites = cit.findall(self.text)
+        self.text = re.sub(cit, "", self.text)
 
-        # self.text = re.sub('<ref.*?>(.|\\n)*?</ref>', ' ', self.text)
-        positions = []
-        for match in re.finditer('<ref.*?>(.|\\n)*?</ref>', self.text):
-            start = match.span()[0]
-            end = match.span()[1]
-            positions.append((start, end))
-            references.append(match.group())
-        for i in reversed(positions):
-            self.text = self.text[:i[0]] + self.text[i[1]:]            
+        ref = re.compile("<ref(?:[^<])*?\/>")
+        references = ref.findall(self.text)
+        self.text = re.sub(ref, "", self.text)
 
-        # print(references)   
+        ref = re.compile("<ref(?:[^<])*?<\/ref>")
+        references += ref.findall(self.text)
+        self.text = re.sub(ref, "", self.text)
         
         self.text = re.sub('https?:\/\/[^\s\|]+', ' ', self.text)
 
@@ -126,7 +92,6 @@ class Page():
 
         category = self.cat_match.findall(self.text)
         self.text = re.sub('\[\[category:([^\]}]+)\]\]', ' ', self.text)
-        # print(category)                    
 
         notes_and_refs = re.search("==[\s]*?notes and references[\s]*?==.*?(?![=]{2,}).*?\n\n", self.text, re.DOTALL)
         if notes_and_refs:
@@ -152,54 +117,53 @@ class Page():
             self.text = self.text[:start] + self.text[end:]
             see_also = see_also.group()[12:]
 
-        # f = open('text_other.txt', 'w')
-        # f.write("cites\n")
-        # f.write("\n".join(cites))
-        # f.write("\n\ninfoboxes\n")
-        # f.write("\n".join(infoboxes))
-        # f.write("\n\ncategory\n")
-        # f.write("\n".join(category))
-        # f.write("\n\nnotes_and_refs\n")
-        # if(notes_and_refs):
-        #     f.write(notes_and_refs)
-        # f.write("\n\next_links\n")
-        # if(ext_links):
-        #     f.write(ext_links)
-        # f.write("\n\nfurther_read\n") 
-        # if(further_read): 
-        #     f.write(further_read)
-        # f.write("\n\nsee_also\n")  
-        # if(see_also):
-        #     f.write(see_also)
-        # f.write("\n\nreferences\n")  
-        # f.write("\n".join(references))
-        # f.write("\n\n")               
-        # f.close()                                                                     
+        f = open('text_other.txt', 'w')
+        f.write("cites\n")
+        f.write("\n".join(cites))
+        f.write("\n\ninfoboxes\n")
+        f.write("\n".join(infoboxes))
+        f.write("\n\ncategory\n")
+        f.write("\n".join(category))
+        f.write("\n\nnotes_and_refs\n")
+        if(notes_and_refs):
+            f.write(notes_and_refs)
+        f.write("\n\next_links\n")
+        if(ext_links):
+            f.write(ext_links)
+        f.write("\n\nfurther_read\n") 
+        if(further_read): 
+            f.write(further_read)
+        f.write("\n\nsee_also\n")  
+        if(see_also):
+            f.write(see_also)
+        f.write("\n\nreferences\n")  
+        f.write("\n".join(references))
+        f.write("\n\n")               
+        f.close()                                                                     
 
 
-        # f = open('text_bp.txt', 'w')
-        # f.write(self.text)
-        # f.close()
+        f = open('text_bp.txt', 'w')
+        f.write(self.text)
+        f.close()
 
         self.text = process_body(self.text)
         # print("Heere")
-        # f = open('text.txt', 'w')
-        # f.write(self.text)
-        # f.close() 
-        
+        f = open('text.txt', 'w')
+        f.write(self.text)
+        f.close() 
+
         self.text = re.sub("\n", "", self.text)
         tokens = self.text.split()
 
-        # tokens = nltk.word_tokenize(self.text)
         tokens = [token for token in tokens if token not in s_words]
-        stemmed = [stemmer.stem(token) for token in tokens]
-        counts = Counter(stemmed)
-        # print("Tokens =  " + str(len(counts)))
-        # for k in counts.keys():
-        #     if(k in inverted_index):
-        #         inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
-        #     else:
-        #         inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
+        stemmed_tokens = stemmer.stemWords(tokens)
+        counts = Counter(stemmed_tokens)
+        print("Tokens =  " + str(len(counts)))
+        for k in counts.keys():
+            if(k in inverted_index):
+                inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
+            else:
+                inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
 
 
 infile = "wiki-search-small.xml"
@@ -211,7 +175,7 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
 for event, elem in context:
     count += 1
     # print(count)
-    # if count >= 100: #1175 for ahmad
+    # if count >= 67: #1175 for ahmad
         # break
     # print(elem[0].text)
     page_title = ""

@@ -1,4 +1,4 @@
-f = open("a.txt", 'r')
+f = open("text_orig.txt", 'r')
 t = f.read()
 f.close()
 
@@ -19,3 +19,23 @@ stemmed = [stemmer.stem(token) for token in tokens]
 
 from collections import Counter
 counts = Counter(stemmed)
+
+
+import Stemmer
+stemmer = Stemmer.Stemmer('english')
+stemmed_tokens = stemmer.stemWords(tokens)
+
+cit = re.compile("{{cite?(?:ation)?.*?}}")
+cites = cit.findall(t)
+t = re.sub(cit, "", t)
+
+ref = re.compile("<ref(?:[^<])*?\/>")
+refs = ref.findall(t)
+t = re.sub(ref, "", t)
+
+ref = re.compile("<ref(?:[^<])*?<\/ref>")
+refs += ref.findall(t)
+t = re.sub(ref, "", t)
+
+
+
