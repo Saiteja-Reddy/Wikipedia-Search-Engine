@@ -12,9 +12,12 @@ stemmer = Stemmer.Stemmer('english')
 from collections import Counter
 inverted_index = {}
 
+translation = {}
+for ele in string.punctuation:
+    translation[ord(ele)] = ' '
 
-def process_body(t):
-    fin = t
+def process_body(fin):
+    # fin = t
     fin = re.sub("<blockquote.*?>(.*?)</blockquote>", r"\1 ", fin)
     fin = fin.rstrip()
     # fin = strip_non_ascii(fin)
@@ -30,9 +33,6 @@ def process_body(t):
     # fin = re.sub("<\!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
     fin = re.sub("<!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
 
-    translation = {}
-    for ele in string.punctuation:
-        translation[ord(ele)] = ' '
     fin = fin.translate(translation)
 
     return fin
@@ -47,51 +47,32 @@ class Page():
         # add new elementss here
 
     def process(self):
-        f = open('text_orig.txt', 'w')
-        f.write(self.text)
-        f.close()   
+        # f = open('text_orig.txt', 'w')
+        # f.write(self.text)
+        # f.close()   
 
         self.text = self.text.lower()
 
-        cit = re.compile("{{cite?(?:ation)?.*?}}")
+        cit = re.compile("{{cite?(?:ation)?(.*?)}}")
         cites = cit.findall(self.text)
         self.text = re.sub(cit, "", self.text)
 
-        ref = re.compile("<ref(?:[^<])*?\/>")
+        ref = re.compile("<ref((?:[^<])*?)\/>")
         references = ref.findall(self.text)
         self.text = re.sub(ref, "", self.text)
 
-        ref = re.compile("<ref(?:[^<])*?<\/ref>")
+        ref = re.compile("<ref((?:[^<])*?)<\/ref>")
         references += ref.findall(self.text)
         self.text = re.sub(ref, "", self.text)
         
         self.text = re.sub('https?:\/\/[^\s\|]+', ' ', self.text)
 
-        infoboxes = []
-        positions = []
-        for match in re.finditer("{{infobox", self.text):
-            start = match.span()[0]
-            end = start + 9
-            flag = 1
-            infobox = ""
-            for character in self.text[start + 9:]:
-                end = end + 1
-                if flag == 0:
-                    break
-                if character == "{":
-                    flag = flag + 1
-                elif character == "}":
-                    flag = flag - 1
-                else:
-                    infobox = infobox + character
-
-            positions.append((start, end))
-            infoboxes.append(infobox)
-        for i in reversed(positions):
-            self.text = self.text[:i[0]] + self.text[i[1]:]
+        infobox = re.compile("{{infobox((?:.|\\n)*?)\n}}")
+        infoboxes = infobox.findall(self.text)
+        self.text = re.sub(infobox, "", self.text)
 
         category = self.cat_match.findall(self.text)
-        self.text = re.sub('\[\[category:([^\]}]+)\]\]', ' ', self.text)
+        self.text = re.sub(self.cat_match, ' ', self.text)
 
         notes_and_refs = re.search("==[\s]*?notes and references[\s]*?==.*?(?![=]{2,}).*?\n\n", self.text, re.DOTALL)
         if notes_and_refs:
@@ -117,34 +98,34 @@ class Page():
             self.text = self.text[:start] + self.text[end:]
             see_also = see_also.group()[12:]
 
-        f = open('text_other.txt', 'w')
-        f.write("cites\n")
-        f.write("\n".join(cites))
-        f.write("\n\ninfoboxes\n")
-        f.write("\n".join(infoboxes))
-        f.write("\n\ncategory\n")
-        f.write("\n".join(category))
-        f.write("\n\nnotes_and_refs\n")
-        if(notes_and_refs):
-            f.write(notes_and_refs)
-        f.write("\n\next_links\n")
-        if(ext_links):
-            f.write(ext_links)
-        f.write("\n\nfurther_read\n") 
-        if(further_read): 
-            f.write(further_read)
-        f.write("\n\nsee_also\n")  
-        if(see_also):
-            f.write(see_also)
-        f.write("\n\nreferences\n")  
-        f.write("\n".join(references))
-        f.write("\n\n")               
-        f.close()                                                                     
+        # f = open('text_other.txt', 'w')
+        # f.write("cites\n")
+        # f.write("\n".join(cites))
+        # f.write("\n\ninfoboxes\n")
+        # f.write("\n".join(infoboxes))
+        # f.write("\n\ncategory\n")
+        # f.write("\n".join(category))
+        # f.write("\n\nnotes_and_refs\n")
+        # if(notes_and_refs):
+        #     f.write(notes_and_refs)
+        # f.write("\n\next_links\n")
+        # if(ext_links):
+        #     f.write(ext_links)
+        # f.write("\n\nfurther_read\n") 
+        # if(further_read): 
+        #     f.write(further_read)
+        # f.write("\n\nsee_also\n")  
+        # if(see_also):
+        #     f.write(see_also)
+        # f.write("\n\nreferences\n")  
+        # f.write("\n".join(references))
+        # f.write("\n\n")               
+        # f.close()                                                                     
 
 
-        f = open('text_bp.txt', 'w')
-        f.write(self.text)
-        f.close()
+        # f = open('text_bp.txt', 'w')
+        # f.write(self.text)
+        # f.close()
 
         self.text = process_body(self.text)
         # print("Heere")
@@ -159,11 +140,11 @@ class Page():
         stemmed_tokens = stemmer.stemWords(tokens)
         counts = Counter(stemmed_tokens)
         print("Tokens =  " + str(len(counts)))
-        for k in counts.keys():
-            if(k in inverted_index):
-                inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
-            else:
-                inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
+        # for k in counts.keys():
+        #     if(k in inverted_index):
+        #         inverted_index[k] += str(self.id) + "-" +  str(counts.get(k)) + ","
+        #     else:
+        #         inverted_index[k] =  str(self.id) + "-" +  str(counts.get(k)) + ","
 
 
 infile = "wiki-search-small.xml"

@@ -38,4 +38,27 @@ refs += ref.findall(t)
 t = re.sub(ref, "", t)
 
 
+t = t.lower()
+
+cit = re.compile("{{cite?(?:ation)?(.*?)}}")
+cites = cit.findall(t)
+t = re.sub(cit, "", t)
+
+ref = re.compile("<ref((?:[^<])*?)\/>")
+references = ref.findall(t)
+t = re.sub(ref, "", t)
+
+ref = re.compile("<ref((?:[^<])*?)<\/ref>")
+references += ref.findall(t)
+t = re.sub(ref, "", t)
+
+t = re.sub('https?:\/\/[^\s\|]+', ' ', t)
+
+infobox = re.compile("{{infobox((?:.|\\n)*?)\n}}")
+infoboxes = infobox.findall(t)
+t = re.sub(infobox, "", t)
+
+category = self.cat_match.findall(t)
+t = re.sub(self.cat_match, ' ', t)
+
 
