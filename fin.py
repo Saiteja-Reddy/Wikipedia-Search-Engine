@@ -6,7 +6,7 @@ import string
 s_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
 s_words.append("name")
 s_words.append("br")
-s_words.extend(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
+s_words.extend(["nbsp", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
 
 import Stemmer
 stemmer = Stemmer.Stemmer('english')
@@ -18,6 +18,11 @@ from unidecode import unidecode
 def remove_non_ascii(text):
     return ''.join([i if ord(i) < 128 else ' ' for i in text])
 
+def camel_case_split(identifier):
+    matches = re.finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)', identifier)
+    out = [m.group(0) for m in matches]
+    out = ' '.join(out)
+    return out.lower()
 
 page_cat_match = re.compile('\[\[category:([^\]}]+)\]\]')
 cit = re.compile("{{cite?(?:ation)?(.*?)}}",re.DOTALL )
@@ -55,6 +60,8 @@ def process_body(fin):
 def process(page_text, page_title, page_id):
     page_text = page_text.encode("utf-8", "ignore")    
     page_text = remove_non_ascii(page_text)
+    page_title = page_title.encode("utf-8", "ignore")    
+    page_title = remove_non_ascii(page_title)    
     f = open('text_orig.txt', 'w')
     f.write(page_text)
     f.close()   
@@ -90,7 +97,7 @@ def process(page_text, page_title, page_id):
     category = page_cat_match.findall(page_text)
     page_text = re.sub(page_cat_match, ' ', page_text)
     category = " ".join(category)
-    category = process_body(category)
+    category = process_body(category) ## only translate needed
 
     notes_and_refs = notes_and_refs_match.findall(page_text, re.DOTALL)
     page_text = re.sub(notes_and_refs_match, ' ', page_text)
@@ -132,6 +139,8 @@ def process(page_text, page_title, page_id):
                 except:
                     pass
 
+    cites = links_match.sub("", cites)                    
+
     f = open('text_other.txt', 'w')
     f.write("cites\n")
     f.write("\n" + cites)
@@ -154,7 +163,9 @@ def process(page_text, page_title, page_id):
     f.write("\n\nreferences\n")  
     f.write("\n" + references)
     f.write("\n\n")               
-    f.close()                                                                     
+    f.close()      
+
+    references = references + " " + see_also + " " + further_read + " " + notes_and_refs                                                              
 
 
     f = open('text_bp.txt', 'w')
@@ -167,17 +178,69 @@ def process(page_text, page_title, page_id):
     f.write(page_text)
     f.close() 
 
-    tokens = page_text.split()
+    page_title = camel_case_split(page_title)
+    page_title = page_title.translate(translator)
 
+    
+    tokens = page_text.split()
     tokens = [token for token in tokens if token not in s_words]
     stemmed_tokens = stemmer.stemWords(tokens)
     body_counts = Counter(stemmed_tokens)
-    print("Tokens =  " + str(len(body_counts)))
-    for k in body_counts.keys():
-        if(k in inverted_index):
-            inverted_index[k] += str(page_id) + "b" +  str(body_counts.get(k)) + ","
+
+
+    tokens = page_title.split()
+    tokens = [token for token in tokens if token not in s_words]
+    stemmed_tokens = stemmer.stemWords(tokens)
+    title_counts = Counter(stemmed_tokens)
+    # print(title_counts)
+
+
+    tokens = category.split()
+    tokens = [token for token in tokens if token not in s_words]
+    stemmed_tokens = stemmer.stemWords(tokens)
+    category_counts = Counter(stemmed_tokens)  
+
+    tokens = infoboxes.split()
+    tokens = [token for token in tokens if token not in s_words]
+    stemmed_tokens = stemmer.stemWords(tokens)
+    info_counts = Counter(stemmed_tokens)
+
+    tokens = ext_links.split()
+    tokens = [token for token in tokens if token not in s_words]
+    stemmed_tokens = stemmer.stemWords(tokens)
+    link_counts = Counter(stemmed_tokens)
+    print(link_counts)
+
+    tokens = references.split()
+    tokens = [token for token in tokens if token not in s_words]
+    stemmed_tokens = stemmer.stemWords(tokens)
+    ref_counts = Counter(stemmed_tokens)
+
+    all_tokens = set(body_counts.keys())
+    all_tokens = all_tokens.union(title_counts.keys())
+    all_tokens = all_tokens.union(category_counts.keys())
+    print(len(body_counts.keys()))
+    print(len(all_tokens))
+
+
+    for k in all_tokens:
+        counts = str(page_id)
+        if k in body_counts:
+            counts += "b" +  str(body_counts.get(k))
+        if k in title_counts:
+            counts += "t" +  str(title_counts.get(k))
+        if k in category_counts:
+            counts += "c" +  str(category_counts.get(k))
+        if k in info_counts:
+            counts += "i" +  str(info_counts.get(k))
+        if k in link_counts:
+            counts += "l" +  str(link_counts.get(k))
+        if k in ref_counts:
+            counts += "r" +  str(ref_counts.get(k))
+        if k in inverted_index:
+            inverted_index[k] += counts + ","
         else:
-            inverted_index[k] =  str(page_id) + "b" +  str(body_counts.get(k)) + ","
+            inverted_index[k] = counts + ","
 
 
 infile = "wiki-search-small.xml"
@@ -188,7 +251,7 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
  
 for event, elem in context:
     count += 1
-    if count >= 67: #1175 for ahmad
+    if count >= 3: #1175 for ahmad
         break
     page_title = ""
     page_id = ""
@@ -196,13 +259,13 @@ for event, elem in context:
     for child in elem:
         if child.tag == "{http://www.mediawiki.org/xml/export-0.8/}title":
             page_title = child.text
-            print(str(count) + " " + page_title + "\n")
         elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}id":
             page_id = child.text
         elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}revision":
             for sub in child:
                 if sub.tag == "{http://www.mediawiki.org/xml/export-0.8/}text":
                     page_text = sub.text
+    print(str(count) + " " + " " + page_id + " " +  page_title + "\n")                    
     if(page_text != None):
         process(page_text , page_title, page_id)
     elem.clear()
