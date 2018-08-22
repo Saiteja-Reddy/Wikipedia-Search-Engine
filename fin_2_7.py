@@ -14,7 +14,7 @@ inverted_index = {}
 
 from unidecode import unidecode
 def remove_non_ascii(text):
-    return unidecode(str(text))
+    return ''.join([i if ord(i) < 128 else ' ' for i in text])
 
 
 page_cat_match = re.compile('\[\[category:([^\]}]+)\]\]')
@@ -27,12 +27,7 @@ ext_links_match = re.compile("==\s?external links\s?==.*?\n\n", re.DOTALL)
 further_read_match = re.compile("==\s?further reading\s?==.*?\n\n", re.DOTALL)
 see_also_match = re.compile("==\s?see also\s?==.*?\n\n", re.DOTALL)
 
-# translator = string.maketrans(string.punctuation, ' '*len(string.punctuation))
-
-translator = {}
-for ele in string.punctuation:
-    translator[ord(ele)] = ' '
-
+translator = string.maketrans(string.punctuation, ' '*len(string.punctuation))
 
 def process_body(fin):
     fin = re.sub("<blockquote.*?>(.*?)</blockquote>", r"\1 ", fin)
@@ -53,10 +48,11 @@ def process_body(fin):
 
 
 def process(page_text, page_title, page_id):
+    page_text = page_text.encode("utf-8", "ignore")    
     page_text = remove_non_ascii(page_text)
-    f = open('text_orig.txt', 'w')
-    f.write(page_text)
-    f.close()   
+    # f = open('text_orig.txt', 'w')
+    # f.write(page_text)
+    # f.close()   
 
     page_text = page_text.lower()
 
@@ -98,29 +94,29 @@ def process(page_text, page_title, page_id):
             if re.search("title", b):
                 cites.append(b.split('=')[1])
 
-    f = open('text_other.txt', 'w')
-    f.write("cites\n")
-    f.write("\n".join(cites))
-    f.write("\n\ninfoboxes\n")
-    f.write("\n".join(infoboxes))
-    f.write("\n\ncategory\n")
-    f.write("\n".join(category))
-    f.write("\n\nnotes_and_refs\n")
-    if(notes_and_refs):
-        f.write("\n".join(notes_and_refs))
-    f.write("\n\next_links\n")
-    if(ext_links):
-        f.write("\n".join(ext_links))
-    f.write("\n\nfurther_read\n") 
-    if(further_read): 
-        f.write("\n".join(further_read))
-    f.write("\n\nsee_also\n")  
-    if(see_also):
-        f.write("\n".join(see_also))
-    f.write("\n\nreferences\n")  
-    f.write("\n".join(references))
-    f.write("\n\n")               
-    f.close()                                                                     
+    # f = open('text_other.txt', 'w')
+    # f.write("cites\n")
+    # f.write("\n".join(cites))
+    # f.write("\n\ninfoboxes\n")
+    # f.write("\n".join(infoboxes))
+    # f.write("\n\ncategory\n")
+    # f.write("\n".join(category))
+    # f.write("\n\nnotes_and_refs\n")
+    # if(notes_and_refs):
+    #     f.write("\n".join(notes_and_refs))
+    # f.write("\n\next_links\n")
+    # if(ext_links):
+    #     f.write("\n".join(ext_links))
+    # f.write("\n\nfurther_read\n") 
+    # if(further_read): 
+    #     f.write("\n".join(further_read))
+    # f.write("\n\nsee_also\n")  
+    # if(see_also):
+    #     f.write("\n".join(see_also))
+    # f.write("\n\nreferences\n")  
+    # f.write("\n".join(references))
+    # f.write("\n\n")               
+    # f.close()                                                                     
 
 
     f = open('text_bp.txt', 'w')
@@ -128,10 +124,10 @@ def process(page_text, page_title, page_id):
     f.close()
 
     page_text = process_body(page_text)
-    print("Heere")
-    f = open('text.txt', 'w')
-    f.write(page_text)
-    f.close() 
+    # print("Heere")
+    # f = open('text.txt', 'w')
+    # f.write(page_text)
+    # f.close() 
 
     page_text = re.sub("\n", "", page_text)
     tokens = page_text.split()
@@ -139,7 +135,7 @@ def process(page_text, page_title, page_id):
     tokens = [token for token in tokens if token not in s_words]
     stemmed_tokens = stemmer.stemWords(tokens)
     counts = Counter(stemmed_tokens)
-    print("Tokens =  " + str(len(counts)))
+    # print("Tokens =  " + str(len(counts)))
     for k in counts.keys():
         if(k in inverted_index):
             inverted_index[k] += str(page_id) + "-" +  str(counts.get(k)) + ","
@@ -155,8 +151,8 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
  
 for event, elem in context:
     count += 1
-    if count >= 19: #1175 for ahmad
-        break
+    # if count >= 19: #1175 for ahmad
+        # break
     page_title = ""
     page_id = ""
     page_text = ""
