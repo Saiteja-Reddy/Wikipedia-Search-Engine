@@ -69,22 +69,7 @@ def process(page_text, page_title, page_id):
 
     page_text = page_text.lower()
 
-    cites = cit.findall(page_text)
-    page_text = re.sub(cit, "", page_text)
-
-    references = ref1.findall(page_text)
-    page_text = re.sub(ref1, "", page_text)
-
-    references += ref2.findall(page_text)
-    page_text = re.sub(ref2, "", page_text)
-    references = " ".join(references)
-    references = links_match.sub("", references)
-    references = process_body(references)
-
-    page_text = links_match.sub("", page_text)
-
-    # infoboxes = infobox_match.findall(page_text)
-
+    f = open('infobox.txt', 'w')
     infoboxes = []
     positions = []
     for match in reversed(list(re.finditer("{{infobox", page_text))):
@@ -104,7 +89,10 @@ def process(page_text, page_title, page_id):
                 infobox = infobox + character
         page_text = page_text[:start] + page_text[end:] 
         infoboxes.append(infobox)
-
+        print(infobox)
+        print((start, end))
+        # f.write(infobox + "Done*****\n")
+    f.close()
     infoboxes = " ".join(infoboxes)
     spl = infoboxes.split('|')
     infoboxes = ""
@@ -114,7 +102,23 @@ def process(page_text, page_title, page_id):
         except:
             infoboxes += sp + " " 
     # unprocessed = infoboxes
-    infoboxes = process_body(infoboxes)
+    infoboxes = process_body(infoboxes)    
+
+    cites = cit.findall(page_text)
+    page_text = re.sub(cit, "", page_text)
+
+    references = ref1.findall(page_text)
+    page_text = re.sub(ref1, "", page_text)
+
+    references += ref2.findall(page_text)
+    page_text = re.sub(ref2, "", page_text)
+    references = " ".join(references)
+    references = links_match.sub("", references)
+    references = process_body(references)
+
+    page_text = links_match.sub("", page_text)
+
+    # infoboxes = infobox_match.findall(page_text)
 
     category = page_cat_match.findall(page_text)
     page_text = re.sub(page_cat_match, ' ', page_text)
@@ -279,7 +283,7 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
  
 for event, elem in context:
     count += 1
-    # if count >= 3746: #1175 for ahmad
+    # if count >= 3: #1175 for ahmad
        # break
     page_title = ""
     page_id = ""
@@ -297,7 +301,7 @@ for event, elem in context:
     if(page_text != None):
         process(page_text , page_title, page_id)
     elem.clear()
-    if(page_id == "303"):
+    if(page_id == "857"):
         break
 
 # import json
