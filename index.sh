@@ -1,0 +1,1 @@
+python2 index.py $1 $2
