@@ -7,6 +7,7 @@ s_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "
 s_words.append("name")
 s_words.append("br")
 s_words.extend(["nbsp", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
+s_words.extend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
 
 import Stemmer
 stemmer = Stemmer.Stemmer('english')
@@ -28,7 +29,7 @@ page_cat_match = re.compile('\[\[category:([^\]}]+)\]\]')
 cit = re.compile("{{cite?(?:ation)?(.*?)}}",re.DOTALL )
 ref1 = re.compile("<ref((?:[^<])*?)\/>")
 ref2 = re.compile("<ref((?:[^<])*?)<\/ref>")
-infobox = re.compile("{{infobox((?:.|\\n)*?)\n}}")
+infobox_match = re.compile("{{infobox((?:.|\\n)*?)\n}}")
 notes_and_refs_match = re.compile("==\s?notes and references\s?==(.*?)\n\n", re.DOTALL)
 ext_links_match = re.compile("==\s?external links\s?==(.*?)\n\n", re.DOTALL)
 further_read_match = re.compile("==\s?further reading\s?==(.*?)\n\n", re.DOTALL)
@@ -82,8 +83,28 @@ def process(page_text, page_title, page_id):
 
     page_text = links_match.sub("", page_text)
 
-    infoboxes = infobox.findall(page_text)
-    page_text = re.sub(infobox, "", page_text)
+    # infoboxes = infobox_match.findall(page_text)
+
+    infoboxes = []
+    positions = []
+    for match in reversed(list(re.finditer("{{infobox", page_text))):
+        start = match.span()[0]
+        end = start+2
+        flag = 2
+        infobox = ""
+        for character in page_text[start+2:]:
+            end = end + 1
+            if flag == 0:
+                break
+            if character == "{":
+                flag = flag + 1
+            elif character == "}":
+                flag = flag - 1
+            else:
+                infobox = infobox + character
+        page_text = page_text[:start] + page_text[end:] 
+        infoboxes.append(infobox)
+
     infoboxes = " ".join(infoboxes)
     spl = infoboxes.split('|')
     infoboxes = ""
@@ -92,6 +113,7 @@ def process(page_text, page_title, page_id):
             infoboxes += sp.split("=")[1] + " "
         except:
             infoboxes += sp + " " 
+    # unprocessed = infoboxes
     infoboxes = process_body(infoboxes)
 
     category = page_cat_match.findall(page_text)
@@ -140,10 +162,13 @@ def process(page_text, page_title, page_id):
                     pass
 
     cites = links_match.sub("", cites)                    
+    cites = process_body(cites)
 
     f = open('text_other.txt', 'w')
     f.write("cites\n")
     f.write("\n" + cites)
+    # f.write("\n\nunproecssesinfoboxes\n")
+    # f.write(unprocessed)
     f.write("\n\ninfoboxes\n")
     f.write(infoboxes)
     f.write("\n\ncategory\n")
@@ -209,7 +234,7 @@ def process(page_text, page_title, page_id):
     tokens = [token for token in tokens if token not in s_words]
     stemmed_tokens = stemmer.stemWords(tokens)
     link_counts = Counter(stemmed_tokens)
-    print(link_counts)
+    # print(link_counts)
 
     tokens = references.split()
     tokens = [token for token in tokens if token not in s_words]
@@ -219,6 +244,9 @@ def process(page_text, page_title, page_id):
     all_tokens = set(body_counts.keys())
     all_tokens = all_tokens.union(title_counts.keys())
     all_tokens = all_tokens.union(category_counts.keys())
+    all_tokens = all_tokens.union(info_counts.keys())
+    all_tokens = all_tokens.union(link_counts.keys())
+    all_tokens = all_tokens.union(ref_counts.keys())
     print(len(body_counts.keys()))
     print(len(all_tokens))
 
@@ -251,8 +279,8 @@ context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.or
  
 for event, elem in context:
     count += 1
-    if count >= 3: #1175 for ahmad
-        break
+    # if count >= 3746: #1175 for ahmad
+       # break
     page_title = ""
     page_id = ""
     page_text = ""
@@ -269,8 +297,19 @@ for event, elem in context:
     if(page_text != None):
         process(page_text , page_title, page_id)
     elem.clear()
+    # if(page_id == "6635"):
+        # break
 
 import json
 with open("json_inverted", 'w') as f:
     json.dump(inverted_index, f)
+
+import pickle
+with open('index.pickle', 'wb') as handle:
+    pickle.dump(inverted_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+f = open('invert_index.txt', 'w')
+for key in sorted(inverted_index):
+    f.write(key + " " + inverted_index[key] + "\n")
+f.close()
 
