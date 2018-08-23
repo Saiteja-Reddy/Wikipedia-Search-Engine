@@ -196,7 +196,7 @@ def process(page_text, page_title, page_id):
     # f.write("\n\n")               
     # f.close()      
 
-    references = references + " " + see_also + " " + further_read + " " + notes_and_refs                                                              
+    references = cites + " " + references + " " + see_also + " " + further_read + " " + notes_and_refs                                                              
 
 
     # f = open('text_bp.txt', 'w')

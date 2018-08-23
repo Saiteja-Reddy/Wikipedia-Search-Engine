@@ -63,9 +63,9 @@ def process(page_text, page_title, page_id):
     page_text = remove_non_ascii(page_text)
     page_title = page_title.encode("utf-8", "ignore")    
     page_title = remove_non_ascii(page_title)    
-    # f = open('text_orig.txt', 'w')
-    # f.write(page_text)
-    # f.close()   
+    f = open('text_orig.txt', 'w')
+    f.write(page_text)
+    f.close()   
 
     page_text = page_text.lower()
 
@@ -164,44 +164,44 @@ def process(page_text, page_title, page_id):
     cites = links_match.sub("", cites)                    
     cites = process_body(cites)
 
-    # f = open('text_other.txt', 'w')
-    # f.write("cites\n")
-    # f.write("\n" + cites)
+    f = open('text_other.txt', 'w')
+    f.write("cites\n")
+    f.write("\n" + cites)
     # f.write("\n\nunproecssesinfoboxes\n")
     # f.write(unprocessed)
-    # f.write("\n\ninfoboxes\n")
-    # f.write(infoboxes)
-    # f.write("\n\ncategory\n")
-    # f.write("\n" + category)
-    # f.write("\n\nnotes_and_refs\n")
-    # if(notes_and_refs):
-    #     f.write(notes_and_refs)
-    # f.write("\n\next_links\n")
-    # if(ext_links):
-    #     f.write(ext_links)
-    # f.write("\n\nfurther_read\n") 
-    # if(further_read): 
-    #     f.write(further_read)
-    # f.write("\n\nsee_also\n")  
-    # if(see_also):
-    #     f.write(see_also)
-    # f.write("\n\nreferences\n")  
-    # f.write("\n" + references)
-    # f.write("\n\n")               
-    # f.close()      
+    f.write("\n\ninfoboxes\n")
+    f.write(infoboxes)
+    f.write("\n\ncategory\n")
+    f.write("\n" + category)
+    f.write("\n\nnotes_and_refs\n")
+    if(notes_and_refs):
+        f.write(notes_and_refs)
+    f.write("\n\next_links\n")
+    if(ext_links):
+        f.write(ext_links)
+    f.write("\n\nfurther_read\n") 
+    if(further_read): 
+        f.write(further_read)
+    f.write("\n\nsee_also\n")  
+    if(see_also):
+        f.write(see_also)
+    f.write("\n\nreferences\n")  
+    f.write("\n" + references)
+    f.write("\n\n")               
+    f.close()      
 
-    references = references + " " + see_also + " " + further_read + " " + notes_and_refs                                                              
+    references = cites + " " + references + " " + see_also + " " + further_read + " " + notes_and_refs                                                              
 
 
-    # f = open('text_bp.txt', 'w')
-    # f.write(page_text)
-    # f.close()
+    f = open('text_bp.txt', 'w')
+    f.write(page_text)
+    f.close()
 
     page_text = process_body(page_text)
-    # print("Heere")
-    # f = open('text.txt', 'w')
-    # f.write(page_text)
-    # f.close() 
+    print("Heere")
+    f = open('text.txt', 'w')
+    f.write(page_text)
+    f.close() 
 
     page_title = camel_case_split(page_title)
     page_title = page_title.translate(translator)
@@ -297,8 +297,8 @@ for event, elem in context:
     if(page_text != None):
         process(page_text , page_title, page_id)
     elem.clear()
-    # if(page_id == "6635"):
-        # break
+    if(page_id == "303"):
+        break
 
 # import json
 # with open("json_inverted", 'w') as f:
@@ -308,8 +308,8 @@ for event, elem in context:
 # with open('index.pickle', 'wb') as handle:
 #     pickle.dump(inverted_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-f = open('invert_index.txt', 'w')
-for key in sorted(inverted_index):
-    f.write(key + " " + inverted_index[key] + "\n")
-f.close()
+# f = open('invert_index.txt', 'w')
+# for key in sorted(inverted_index):
+#     f.write(key + " " + inverted_index[key] + "\n")
+# f.close()
 
