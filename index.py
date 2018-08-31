@@ -1,12 +1,13 @@
 from lxml import etree
 import re
 import string
+import io
+
 
 import sys
 program_name = sys.argv[0]
 arguments = sys.argv[1:]
 count = len(arguments)
-# print(arguments)
 
 s_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
 s_words.append("name")
@@ -20,7 +21,6 @@ stemmer = Stemmer.Stemmer('english')
 from collections import Counter
 inverted_index = {}
 
-from unidecode import unidecode
 def remove_non_ascii(text):
     return ''.join([i if ord(i) < 128 else ' ' for i in text])
 
@@ -56,7 +56,7 @@ def process_body(fin):
     fin = re.sub("{{main.*?\|(.*?)}}", r"\1 ", fin, re.DOTALL)
     fin = re.sub("file:.*?\|", " ", fin, re.DOTALL)
     fin = re.sub("<!-*(.*?)-*>", r"\1 ", fin ,re.DOTALL)
-
+    fin = links_match.sub("", fin)
     fin = fin.translate(translator)
 
     return fin
@@ -80,9 +80,7 @@ def process(page_text, page_title, page_id):
     page_text = re.sub(ref2, "", page_text)
     references = " ".join(references)
     references = links_match.sub("", references)
-    references = process_body(references)
-
-    page_text = links_match.sub("", page_text)
+    references = process_body(references)    
 
     infoboxes = []
     positions = []
@@ -105,6 +103,7 @@ def process(page_text, page_title, page_id):
         infoboxes.append(infobox)
 
     infoboxes = " ".join(infoboxes)
+    
     spl = infoboxes.split('|')
     infoboxes = ""
     for sp in spl:
@@ -112,7 +111,9 @@ def process(page_text, page_title, page_id):
             infoboxes += sp.split("=")[1] + " "
         except:
             infoboxes += sp + " " 
-    infoboxes = process_body(infoboxes)
+    infoboxes = process_body(infoboxes)    
+
+    page_text = links_match.sub("", page_text)
 
     category = page_cat_match.findall(page_text)
     page_text = re.sub(page_cat_match, ' ', page_text)
@@ -231,34 +232,39 @@ print("using file " + infile)
  
 count = 0
 
-context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.org/xml/export-0.8/}page')
+context = etree.iterparse(infile, events=('end',))
  
 for event, elem in context:
-    count += 1
-    # if count >= 3746: #1175 for ahmad
-       # break
-    page_title = ""
-    page_id = ""
-    page_text = ""
-    for child in elem:
-        if child.tag == "{http://www.mediawiki.org/xml/export-0.8/}title":
-            page_title = child.text
-        elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}id":
-            page_id = child.text
-        elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}revision":
-            for sub in child:
-                if sub.tag == "{http://www.mediawiki.org/xml/export-0.8/}text":
-                    page_text = sub.text
-    # print(str(count) + " " + " " + page_id + " " +  page_title + "\n")                    
-    if(page_text != None):
-        process(page_text , page_title, page_id)
-    elem.clear()
-    # if(page_id == "6635"):
-        # break
+    elem_name = etree.QName(elem.tag)
+    if (elem_name.localname == "page"):
+        count += 1
+        # if count >= 20: #1175 for ahmad
+           # break
+        print(count)
+        page_title = ""
+        page_id = ""
+        page_text = ""
+        for child in elem:
+            child_name = etree.QName(child.tag)
+            if child_name.localname == "title":
+                page_title = child.text
+                # print(page_title)
+            elif child_name.localname == "id":
+                page_id = child.text
+            elif child_name.localname == "revision":
+                for sub in child:
+                    sub_name = etree.QName(sub.tag)
+                    if sub_name.localname == "text":
+                        page_text = sub.text
+        # print(str(count) + " " + " " + page_id + " " +  page_title + "\n")                    
+        if(page_text != None):
+            process(page_text , page_title, page_id)
+        elem.clear()
+        # if(page_id == "6635"):
+            # break
 
 print("writing to " + arguments[1])
 f = open(arguments[1], 'w')
 for key in sorted(inverted_index):
     f.write(key + " " + inverted_index[key] + "\n")
 f.close()
-

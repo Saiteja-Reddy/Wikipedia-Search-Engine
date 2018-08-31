@@ -69,6 +69,18 @@ def process(page_text, page_title, page_id):
 
     page_text = page_text.lower()
 
+    cites = cit.findall(page_text)
+    page_text = re.sub(cit, "", page_text)   
+
+    references = ref1.findall(page_text)
+    page_text = re.sub(ref1, "", page_text)
+
+    references += ref2.findall(page_text)
+    page_text = re.sub(ref2, "", page_text)
+    references = " ".join(references)
+    references = links_match.sub("", references)
+    references = process_body(references)     
+
     f = open('infobox.txt', 'w')
     infoboxes = []
     positions = []
@@ -103,18 +115,6 @@ def process(page_text, page_title, page_id):
             infoboxes += sp + " " 
     # unprocessed = infoboxes
     infoboxes = process_body(infoboxes)    
-
-    cites = cit.findall(page_text)
-    page_text = re.sub(cit, "", page_text)
-
-    references = ref1.findall(page_text)
-    page_text = re.sub(ref1, "", page_text)
-
-    references += ref2.findall(page_text)
-    page_text = re.sub(ref2, "", page_text)
-    references = " ".join(references)
-    references = links_match.sub("", references)
-    references = process_body(references)
 
     page_text = links_match.sub("", page_text)
 
@@ -301,8 +301,8 @@ for event, elem in context:
     if(page_text != None):
         process(page_text , page_title, page_id)
     elem.clear()
-    if(page_id == "857"):
-        break
+    # if(page_id == "857"):
+        # break
 
 # import json
 # with open("json_inverted", 'w') as f:
@@ -312,8 +312,8 @@ for event, elem in context:
 # with open('index.pickle', 'wb') as handle:
 #     pickle.dump(inverted_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-# f = open('invert_index.txt', 'w')
-# for key in sorted(inverted_index):
-#     f.write(key + " " + inverted_index[key] + "\n")
-# f.close()
+f = open('invert_index.txt', 'w')
+for key in sorted(inverted_index):
+    f.write(key + " " + inverted_index[key] + "\n")
+f.close()
 
