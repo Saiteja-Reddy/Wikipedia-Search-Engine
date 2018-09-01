@@ -1,8 +1,6 @@
 from lxml import etree
 import re
 import string
-import io
-
 
 import sys
 program_name = sys.argv[0]
@@ -62,9 +60,7 @@ def process_body(fin):
     return fin
 
 
-def process(page_text, page_title, page_id, count):
-    global inverted_index
-
+def process(page_text, page_title, page_id):
     page_text = page_text.encode("utf-8", "ignore")    
     page_text = remove_non_ascii(page_text)
     page_title = page_title.encode("utf-8", "ignore")    
@@ -227,25 +223,6 @@ def process(page_text, page_title, page_id, count):
             inverted_index[k] += counts + ","
         else:
             inverted_index[k] = counts + ","
-        # print(k  + " " + inverted_index[k])
-
-    print("processed : " + page_title + " " + str(page_id))
-
-    if count % 100 == 0:
-        print(page_title + " writing now")
-        print("writing to " + arguments[1] + str(count/100))
-        filename = "outfiles/" + str(arguments[1]) + str(count/100)+ ".txt"
-        f = open(filename, 'w')
-        for key in sorted(inverted_index):
-            # if(key == "road"):
-                # print(key + " " + inverted_index[key])
-                # print(filename)
-                # test = open('test.txt', 'w')
-                # test.write(key + " " + inverted_index[key] + "\n")
-                # test.close()
-            f.write(key + " " + inverted_index[key] + "\n")
-        f.close()        
-        inverted_index = {}
 
 
 infile = arguments[0]
@@ -253,42 +230,35 @@ print("using file " + infile)
  
 count = 0
 
-context = etree.iterparse(infile, events=('end',))
+context = etree.iterparse(infile, events=('end',), tag='{http://www.mediawiki.org/xml/export-0.8/}page')
  
 for event, elem in context:
-    elem_name = etree.QName(elem.tag)
-    if (elem_name.localname == "page"):
-        if count > 1000 - 1: #1175 for ahmad
-           break
-        count += 1
-        print(count)
-        page_title = ""
-        page_id = ""
-        page_text = ""
-        for child in elem:
-            child_name = etree.QName(child.tag)
-            if child_name.localname == "title":
-                page_title = child.text
-                # print(page_title)
-            elif child_name.localname == "id":
-                page_id = child.text
-            elif child_name.localname == "revision":
-                for sub in child:
-                    sub_name = etree.QName( sub.tag)
-                    if sub_name.localname == "text":
-                        page_text = sub.text
-        # print(str(count) + " " + " " + page_id + " " +  page_title + "\n")                    
-        if(page_text != None):
-            process(page_text , page_title, page_id, count)
-        elem.clear()
-        # if(page_id == "1928"):
-            # print(page_text)
+    count += 1
+    if count >= 1001: #1175 for ahmad
+       break
+    page_title = ""
+    page_id = ""
+    page_text = ""
+    for child in elem:
+        if child.tag == "{http://www.mediawiki.org/xml/export-0.8/}title":
+            page_title = child.text
+            print(page_title)
+        elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}id":
+            page_id = child.text
+        elif child.tag == "{http://www.mediawiki.org/xml/export-0.8/}revision":
+            for sub in child:
+                if sub.tag == "{http://www.mediawiki.org/xml/export-0.8/}text":
+                    page_text = sub.text
+    # print(str(count) + " " + " " + page_id + " " +  page_title + "\n")                    
+    if(page_text != None):
+        process(page_text , page_title, page_id)
+    elem.clear()
+    # if(page_id == "6635"):
+        # break
 
-# print(str(inverted_index))
-print("final write")
-print("writing to " + arguments[1] + str(count/100))
-f = open("outfiles/" + str(arguments[1]) + str(count/100)+ ".txt", 'a')
+print("writing to " + arguments[1])
+f = open(arguments[1], 'w')
 for key in sorted(inverted_index):
     f.write(key + " " + inverted_index[key] + "\n")
-f.close()        
-inverted_index = {}
+f.close()
+
