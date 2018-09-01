@@ -5,8 +5,8 @@ import heapq
 fps = []
 heap = []
 
-for i in range(1, 12):
-    curr_file = "outfiles/outfiles_1" + str(i) + ".txt"
+for i in range(1, 11):
+    curr_file = "outfiles/outfiles" + str(i) + ".txt"
     f = open(curr_file, 'r')
     fps.append(f)
 
@@ -23,6 +23,8 @@ for i, fp in enumerate(fps):
     # print(str(i) + " "  + str(token) + " " + str(postings) )
     # fp.close()
 
+# print(heap)
+
 fin_inv = open("outfiles/inv_outfile.txt", "w")
 
 while(len(heap) > 0):
@@ -33,12 +35,13 @@ while(len(heap) > 0):
         line = line.split("\n")[0]
         line = line.split(" ")
         line[1] = int(line[1])
-        line.insert(1, top[1])        
+        line.insert(1, i)  
+        # print(str(line) + "Here")    
         # print(str(top[1]) + "Here")
         heapq.heappush(heap, line)        
     while(len(heap) > 0 and heap[0][0] == top[0]):
         now = heapq.heappop(heap)
-        # print(now)
+        # print(str(now) + "Now " +  str(top))
         top[2] = top[2] +  now[2]
         top[3] = top[3] +  now[3]
         # print (now, "popback")
@@ -47,9 +50,10 @@ while(len(heap) > 0):
             line = line.split("\n")[0]
             line = line.split(" ")
             line[1] = int(line[1])
-            line.insert(1, now[1])        
+            line.insert(1, i)     
             # print(str(top[1]) + "Here")
-            heapq.heappush(heap, line)       
+            heapq.heappush(heap, line)         
+        # print(top)
     print(top)
     fin_inv.write(top[0] + " " + str(top[2]) + " " + top[3] + "\n")
 fin_inv.close()

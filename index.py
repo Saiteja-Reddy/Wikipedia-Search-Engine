@@ -12,14 +12,18 @@ count = len(arguments)
 s_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
 s_words.append("name")
 s_words.append("br")
-s_words.extend(["nbsp", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
-s_words.extend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+s_words.append("nbsp")
+# s_words.extend(["nbsp", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
+# s_words.extend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
 
 import Stemmer
 stemmer = Stemmer.Stemmer('english')
 
 from collections import Counter
 inverted_index = {}
+
+docs_interval = 100
+file_counter = 0
 
 def remove_non_ascii(text):
     return ''.join([i if ord(i) < 128 else ' ' for i in text])
@@ -64,6 +68,8 @@ def process_body(fin):
 
 def process(page_text, page_title, page_id, count):
     global inverted_index
+    global file_counter
+    global docs_interval
 
     page_text = page_text.encode("utf-8", "ignore")    
     page_text = remove_non_ascii(page_text)
@@ -224,17 +230,21 @@ def process(page_text, page_title, page_id, count):
         if k in ref_counts:
             counts += "r" +  str(ref_counts.get(k))
         if k in inverted_index:
-            inverted_index[k] += counts + ","
+            inverted_index[k][0] += 1
+            inverted_index[k][1] += counts + ","
         else:
-            inverted_index[k] = counts + ","
+            inverted_index[k] = [0 , ""]
+            inverted_index[k][0] += 1
+            inverted_index[k][1] = counts + ","
         # print(k  + " " + inverted_index[k])
 
     print("processed : " + page_title + " " + str(page_id))
 
-    if count % 100 == 0:
+    if count ==  docs_interval:
+        file_counter = file_counter + 1
         print(page_title + " writing now")
-        print("writing to " + arguments[1] + str(count/100))
-        filename = "outfiles/" + str(arguments[1]) + str(count/100)+ ".txt"
+        print("writing to " + arguments[1] + str(file_counter))
+        filename = "outfiles/" + str(arguments[1]) + str(file_counter)+ ".txt"
         f = open(filename, 'w')
         for key in sorted(inverted_index):
             # if(key == "road"):
@@ -243,9 +253,11 @@ def process(page_text, page_title, page_id, count):
                 # test = open('test.txt', 'w')
                 # test.write(key + " " + inverted_index[key] + "\n")
                 # test.close()
-            f.write(key + " " + inverted_index[key] + "\n")
+            f.write(key + " " + str(inverted_index[key][0]) + " " + inverted_index[key][1] + "\n")
         f.close()        
         inverted_index = {}
+        count = 0
+    return count
 
 
 infile = arguments[0]
@@ -255,13 +267,14 @@ count = 0
 
 context = etree.iterparse(infile, events=('end',))
  
+# print(file_counter*docs_interval)
 for event, elem in context:
     elem_name = etree.QName(elem.tag)
     if (elem_name.localname == "page"):
-        if count > 1000 - 1: #1175 for ahmad
+        if file_counter*docs_interval + count > 1000: #1175 for ahmad
            break
         count += 1
-        print(count)
+        print(file_counter*docs_interval + count)
         page_title = ""
         page_id = ""
         page_text = ""
@@ -279,16 +292,18 @@ for event, elem in context:
                         page_text = sub.text
         # print(str(count) + " " + " " + page_id + " " +  page_title + "\n")                    
         if(page_text != None):
-            process(page_text , page_title, page_id, count)
+            count = process(page_text , page_title, page_id, count)
         elem.clear()
         # if(page_id == "1928"):
             # print(page_text)
 
 # print(str(inverted_index))
 print("final write")
-print("writing to " + arguments[1] + str(count/100))
-f = open("outfiles/" + str(arguments[1]) + str(count/100)+ ".txt", 'a')
+print("writing to " + arguments[1] + str(file_counter+1))
+f = open("outfiles/" + str(arguments[1]) + str(file_counter+1)+ ".txt", 'w')
 for key in sorted(inverted_index):
-    f.write(key + " " + inverted_index[key] + "\n")
+    f.write(key + " " + str(inverted_index[key][0]) + " " + inverted_index[key][1] + "\n")
 f.close()        
 inverted_index = {}
+
+
