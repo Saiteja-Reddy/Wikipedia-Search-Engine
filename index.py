@@ -22,7 +22,7 @@ stemmer = Stemmer.Stemmer('english')
 from collections import Counter
 inverted_index = {}
 
-docs_interval = 100
+docs_interval = 1000
 file_counter = 0
 
 def remove_non_ascii(text):
@@ -238,12 +238,12 @@ def process(page_text, page_title, page_id, count):
             inverted_index[k][1] = counts + ","
         # print(k  + " " + inverted_index[k])
 
-    print("processed : " + page_title + " " + str(page_id))
+    # print("processed : " + page_title + " " + str(page_id))
 
     if count ==  docs_interval:
         file_counter = file_counter + 1
-        print(page_title + " writing now")
-        print("writing to " + arguments[1] + str(file_counter))
+        # print(page_title + " writing now")
+        # print("writing to " + arguments[1] + str(file_counter))
         filename = "outfiles/" + str(arguments[1]) + str(file_counter)+ ".txt"
         f = open(filename, 'w')
         for key in sorted(inverted_index):
@@ -271,10 +271,10 @@ context = etree.iterparse(infile, events=('end',))
 for event, elem in context:
     elem_name = etree.QName(elem.tag)
     if (elem_name.localname == "page"):
-        if file_counter*docs_interval + count > 1000: #1175 for ahmad
-           break
+        # if file_counter*docs_interval + count > 1000: #1175 for ahmad
+           # break
         count += 1
-        print(file_counter*docs_interval + count)
+        # print(file_counter*docs_interval + count)
         page_title = ""
         page_id = ""
         page_text = ""
@@ -307,3 +307,62 @@ f.close()
 inverted_index = {}
 
 
+### run initial -  python2 index.py  wiki-search-small.xml outfile
+
+import heapq
+
+fps = []
+heap = []
+
+for i in range(1, file_counter + 2):
+    curr_file = "outfiles/outfile" + str(i) + ".txt"
+    f = open(curr_file, 'r')
+    fps.append(f)
+
+for i, fp in enumerate(fps):
+    line = fp.readline()
+    if(line == ""):
+        continue
+    line = line.split("\n")[0]
+    line = line.split(" ")
+    line[1] = int(line[1])
+    line.insert(1, i)
+    # print(line)
+    heapq.heappush(heap, line)
+    # print(str(i) + " "  + str(token) + " " + str(postings) )
+    # fp.close()
+
+fin_inv = open("outfiles/inv_outfile.txt", "w")
+
+while(len(heap) > 0):
+    top = heapq.heappop(heap)
+    # print(top , "poptop")
+    line = fps[top[1]].readline()
+    if line:
+        line = line.split("\n")[0]
+        line = line.split(" ")
+        line[1] = int(line[1])
+        line.insert(1, top[1])        
+        # print(str(top[1]) + "Here")
+        heapq.heappush(heap, line)        
+    while(len(heap) > 0 and heap[0][0] == top[0]):
+        now = heapq.heappop(heap)
+        # print(now)
+        top[2] = top[2] +  now[2]
+        top[3] = top[3] +  now[3]
+        # print (now, "popback")
+        line = fps[now[1]].readline()
+        if line:
+            line = line.split("\n")[0]
+            line = line.split(" ")
+            line[1] = int(line[1])
+            line.insert(1, now[1])        
+            # print(str(top[1]) + "Here")
+            heapq.heappush(heap, line)       
+    # print(top)
+    fin_inv.write(top[0] + " " + str(top[2]) + " " + top[3] + "\n")
+fin_inv.close()
+    # print(top)
+
+for fp in fps:
+    fp.close()

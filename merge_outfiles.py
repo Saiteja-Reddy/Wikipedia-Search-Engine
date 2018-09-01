@@ -6,7 +6,7 @@ fps = []
 heap = []
 
 for i in range(1, 12):
-    curr_file = "outfiles/outfiles_1" + str(i) + ".txt"
+    curr_file = "outfiles/outfile" + str(i) + ".txt"
     f = open(curr_file, 'r')
     fps.append(f)
 
