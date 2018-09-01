@@ -42,6 +42,7 @@ def process_word(word, field):
 		posting = posting.split("\n")[0]
 		posting = posting.split(",")[:-1]
 		ref_count, links_count, info_count, category_count, title_count, body_count = [1 for _ in range(6)]
+		query_arr = []
 		for post in posting:
 			# print post
 			ref, links, info, category, title, body = [0 for _ in range(6)]
@@ -80,30 +81,80 @@ def process_word(word, field):
 				net = int(body) + int(title) + int(category) + int(info) + int(links) + int(ref)
 				tf_idf_val = log10(1 + int(net)) * log10(total_docs/ len(posting))
 
-			if(len(heap) < top_count):
-				heapq.heappush(heap, [tf_idf_val, int(post)])
-				# print(heap)
-			else:
-				if(heap[0][0] < tf_idf_val):
-					heapq.heappop(heap)
-					heapq.heappush(heap, [tf_idf_val, int(post)])
-					# print(len(heap))
-			# print(post + " b - " + str(body) + " t - " + str(title) + " c - " + str(category) + " i - " + str(info) + " l - " + str(links) + " r - " + str(ref))
+			if(tf_idf_val != 0.0):
+				query_arr.append((int(post),tf_idf_val))
+
+		return(query_arr)
+		# 	if(len(heap) < top_count):
+		# 		heapq.heappush(heap, [tf_idf_val, int(post)])
+		# 		# print(heap)
+		# 	else:
+		# 		if(heap[0][0] < tf_idf_val):
+		# 			heapq.heappop(heap)
+		# 			heapq.heappush(heap, [tf_idf_val, int(post)])
+		# 			# print(len(heap))
+		# 	# print(post + " b - " + str(body) + " t - " + str(title) + " c - " + str(category) + " i - " + str(info) + " l - " + str(links) + " r - " + str(ref))
 		
-		req = top_count
+		# req = top_count
+		# # print(heap)
+		# while(len(heap) > 0 and req > 0):
+		# 	req = req - 1
+		# 	print(heapq.heappop(heap))
+		# # print(heap)	
+
+def process_query(queries):
+	query_arrays = []
+	for query in queries:
+		sym = query.split(":")
+		if(len(sym) == 1):
+			query_arrays.append(process_word(sym[0], 'a'))
+		else:
+			query_arrays.append(process_word(sym[1], sym[0]))
+
+	heap = []
+	results = []
+	print(query_arrays)
+	print("")
+	for i, arr in enumerate(query_arrays):
+		if(len(arr) == 0):
+			return results
+		if(len(arr) > 0):
+			temp = arr.pop(0)
+			heapq.heappush(heap, [temp[0], i,  temp[1]])
+
+	flag = 1
+	while(len(heap) > 0 and flag == 1):
+		top = heapq.heappop(heap)
+		count = 1
+		tf_idf = top[2]
+		if(len(query_arrays[top[1]]) == 0):
+			flag = 0
+		else:
+			temp = query_arrays[top[1]].pop(0)
+			heapq.heappush(heap, [temp[0], top[1],  temp[1]])
 		# print(heap)
-		while(len(heap) > 0 and req > 0):
-			req = req - 1
-			print(heapq.heappop(heap))
-		# print(heap)	
+		while(len(heap) > 0 and heap[0][0] == top[0]):
+			now = heapq.heappop(heap)
+			count = count + 1
+			tf_idf = tf_idf + now[2]
+			if(count == len(query_arrays)):
+				results.append((now[0], tf_idf))
+				# print("resuults" + str(results))
+			if(len(query_arrays[now[1]]) == 0):
+				flag = 0
+			else:
+				temp = query_arrays[now[1]].pop(0)
+				heapq.heappush(heap, [temp[0], now[1],  temp[1]])
 
-
+	print("final" + str(results))
+	# print(heap)
 
 while True:
-	query = raw_input("Query-> ")
-	# queries = query.split()
-	start_time = time.time()
+	queries = raw_input("Query-> ")
+	queries = queries.split()
+	process_query(queries)
+	# start_time = time.time()
 	# for query in queries:
-	process_word(query, 'a')
-	print("Process time : " + str(time.time()-start_time))
+	# process_word(query, 'a')
+	# print("Process time : " + str(time.time()-start_time))
 
