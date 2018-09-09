@@ -9,8 +9,7 @@ def get_title(t_id, filename = "out_titles.txt"):
 	output = line.split(",")
 	if(int(output[0]) == t_id):
 		f.close()
-		print(output)
-		return
+		return output
 	while l<r:
 		m = (l+r)/2
 		f.seek(int(m))
@@ -20,16 +19,15 @@ def get_title(t_id, filename = "out_titles.txt"):
 			continue
 		line = f.readline()
 		output = line.split(",")
-		# print(output)
 		if(int(output[0]) == t_id):
 			f.close()
-			print(output)
+			return output
 			break
 		elif(int(output[0]) > t_id):
 			r = m-1
 		else:
 			l = m+1
 	f.close()
-	print("Not Found")
+	return [-1,-1]
 
-get_title(10)
+print(get_title(1234))
