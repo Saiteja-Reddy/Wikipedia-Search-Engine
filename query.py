@@ -3,6 +3,19 @@ import os
 import heapq
 from math import log10
 import time
+import string
+
+
+s_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
+s_words.append("name")
+s_words.append("br")
+s_words.append("nbsp")
+
+translator = string.maketrans(string.punctuation + '|', ' '*(len(string.punctuation)+1))
+
+import Stemmer
+stemmer = Stemmer.Stemmer('english')
+
 
 def get_word_posting(index, word):
 	f = open(index, 'r')
@@ -30,9 +43,10 @@ def get_word_posting(index, word):
 	f.close()
 	return [-1, -1, -1]
 
-def process_word(word, field):
-	total_docs = 5311
-	token, occur, posting =  get_word_posting("outfiles/inv_outfile.txt", word)
+def process_word(word, field, file_names):
+	# total_docs = 5311
+	total_docs = 17700000
+	token, occur, posting =  get_word_posting(file_names, word)
 	if(token == -1):
 		print("Not Found")
 		return []
@@ -93,14 +107,18 @@ def process_word(word, field):
 		# print(query_arr)
 		return(query_arr)
 
-def process_query(queries):
+def process_query(queries, file_names):
 	query_arrays = []
 	for query in queries:
 		sym = query.split(":")
 		if(len(sym) == 1):
-			query_arrays.append(process_word(sym[0], 'a'))
+			# sym[0] = sym[0].translate(translator)
+			sym[0] = stemmer.stemWord(sym[0].lower())
+			query_arrays.append(process_word(sym[0], 'a', file_names))
 		else:
-			query_arrays.append(process_word(sym[1], sym[0]))
+			# sym[0] = sym[0].translate(translator)
+			sym[0] = stemmer.stemWord(sym[0].lower())
+			query_arrays.append(process_word(sym[1], sym[0], file_names))
 
 	# print(len(query_arrays))
 	if(len(query_arrays) == 1):
@@ -169,10 +187,15 @@ def process_query(queries):
 	# print("Here")
 	# return(docs)
 
+import sys
+program_name = sys.argv[0]
+arguments = sys.argv[1:]
+count = len(arguments)
+
 while True:
 	queries = raw_input("Query-> ")
 	queries = queries.split()
 	start_time = time.time()
-	process_query(queries)
+	process_query(queries, arguments[0])
 	print("Process time : " + str(time.time()-start_time))
 
