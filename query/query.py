@@ -118,6 +118,7 @@ def process_query(queries):
 	query_arrays = []
 	for query in queries:
 		sym = query.split(":")
+		# print(sym)
 		if(len(sym) == 1):
 			# sym[0] = sym[0].translate(translator)
 			sym[0] = stemmer.stemWord(sym[0].lower())
@@ -131,6 +132,7 @@ def process_query(queries):
 			# sym[0] = sym[0].translate(translator)
 			sym[1] = stemmer.stemWord(sym[1].lower())
 			pl = process_word(sym[1], sym[0])
+			# print(pl[:10])
 			if(len(pl) == 0):
 				continue			
 			query_arrays.append(pl)
@@ -175,8 +177,11 @@ def process_query(queries):
 		# print(sorted_ranks[:10])
 		for now in sorted_ranks[:10]:
 			print(get_title(int(now[0])))
-	else:
+	elif(len(sorted_ranks) == 0):
 		print("No Results!")
+	else:
+		for now in sorted_ranks:
+			print(get_title(int(now[0])))		
 	
 
 
