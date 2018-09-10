@@ -121,7 +121,11 @@ def process_query(queries):
 		# print(sym)
 		if(len(sym) == 1):
 			# sym[0] = sym[0].translate(translator)
+			if(sym[0] in s_words):
+				continue			
 			sym[0] = stemmer.stemWord(sym[0].lower())
+			if(sym[0] in s_words):
+				continue			
 			pl = process_word(sym[0], 'a')
 			# print(pl)
 			if(len(pl) == 0):
@@ -130,7 +134,11 @@ def process_query(queries):
 			# print(('a', sym[0]))
 		else:
 			# sym[0] = sym[0].translate(translator)
+			if(sym[1] in s_words):
+				continue
 			sym[1] = stemmer.stemWord(sym[1].lower())
+			if(sym[1] in s_words):
+				continue			
 			pl = process_word(sym[1], sym[0])
 			# print(pl[:10])
 			if(len(pl) == 0):
