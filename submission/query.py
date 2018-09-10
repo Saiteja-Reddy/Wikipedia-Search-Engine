@@ -46,7 +46,11 @@ def preprocess(query):
 				fin = fin + sym[0] + ":" + a + " "
 				# print((sym[0], a))
 		else:
-			fin = fin + query + " "
+			query = query.translate(translator)
+			query = query.split(" ")
+			for a in query:
+				fin = fin + a + " "
+			# fin = fin + query
 			# print(query)
 	return(fin)
 
