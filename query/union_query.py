@@ -253,6 +253,7 @@ def process_query_u(queries):
 				if i[0] in docs:
 					ranks[i[0]] = ranks[i[0]] + float(i[1])		
 
+		sorted_ranks = sorted(ranks.items(), key=operator.itemgetter(1), reverse=True)
 		sorted_ranks_u = sorted_ranks
 	else:
 		docs_u = set([i[0] for i in query_arrays[0]])
