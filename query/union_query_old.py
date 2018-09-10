@@ -16,24 +16,6 @@ translator = string.maketrans(string.punctuation + '|', ' '*(len(string.punctuat
 import Stemmer
 stemmer = Stemmer.Stemmer('english')
 
-def preprocess(query):
-	# print(query)
-	queries = query.split(" ")
-	fin = ""
-	for query in queries:
-		if(":" in query):
-			sym = query.split(":")
-			query = sym[1]
-			query = query.translate(translator)
-			query = query.split(" ")
-			for a in query:
-				fin = fin + sym[0] + ":" + a + " "
-				# print((sym[0], a))
-		else:
-			fin = fin + query + " "
-			# print(query)
-	return(fin)
-
 def get_word_posting(index, word):
 	f = open(index, 'r')
 	# print(index)
@@ -168,6 +150,7 @@ def process_query(queries):
 	# print(len(query_arrays))
 	if(len(query_arrays) == 0):
 		sorted_ranks = {}
+		sorted_ranks_u = {}
 	elif len(query_arrays) == 1:
 		docs = set([i[0] for i in query_arrays[0]])
 		docs = docs.intersection([i[0] for i in query_arrays[0]])
@@ -179,44 +162,57 @@ def process_query(queries):
 				if i[0] in docs:
 					ranks[i[0]] = ranks[i[0]] + float(i[1])		
 		sorted_ranks = sorted(ranks.items(), key=operator.itemgetter(1), reverse=True)
-
+		sorted_ranks_u = sorted_ranks
 	else:
 		docs = set([i[0] for i in query_arrays[0]])
+		docs_u = set([i[0] for i in query_arrays[0]])
 		for query_array in query_arrays:
 			# print(len(query_array))
 			docs = docs.intersection([i[0] for i in query_array])
+			docs_u = docs.union([i[0] for i in query_array])
 		# print(len(docs))
 		ranks = {}
+		ranks_u = {}
 		for doc in docs:
 			ranks[doc] = 0.0
+		for doc in docs_u:
+			ranks_u[doc] = 0.0		
 		# print(ranks)
 		for query_array in query_arrays:
 			for i in query_array:
 				if i[0] in docs:
 					ranks[i[0]] = ranks[i[0]] + float(i[1])
+				if i[0] in docs_u:
+					ranks_u[i[0]] = ranks_u[i[0]] + float(i[1])					
 
 		# print(ranks)
 		sorted_ranks = sorted(ranks.items(), key=operator.itemgetter(1), reverse=True)
+		sorted_ranks_u = sorted(ranks_u.items(), key=operator.itemgetter(1), reverse=True)
 		# print sorted_ranks
 
 	if(len(sorted_ranks) >= 10):
 		# print(sorted_ranks[:10])
-		for pos, now in enumerate(sorted_ranks[:10]):
-			# print(get_title(int(now[0])))
-			print(pos+1, get_title(int(now[0]))[1].rstrip())
-	elif(len(sorted_ranks) == 0):
+		for now in sorted_ranks[:10]:
+			print(get_title(int(now[0])))
+	elif(len(sorted_ranks) == 0 and len(sorted_ranks_u) == 0):
 		print("No Results!")
 	else:
-		for pos, now in enumerate(sorted_ranks):
-			# print(get_title(int(now[0])))		
-			print(pos+1, get_title(int(now[0]))[1].rstrip())
-	
+		length = len(sorted_ranks)
+		printed = []
+		for now in sorted_ranks:
+			printed.append(now[0])
+			print(get_title(int(now[0])))		
 
+		for now in sorted_ranks_u:
+			if now[0] not in printed:
+				length = length + 1
+				print(get_title(int(now[0])))
+			if(length == 10):
+				break
 
 while True:
 	queries = raw_input("Query-> ")
-	queries = preprocess(queries)
 	queries = queries.split()
 	start_time = time.time()
 	process_query(queries)
-	print("\nProcess time : " + str(time.time()-start_time))
+	print("Process time : " + str(time.time()-start_time))
